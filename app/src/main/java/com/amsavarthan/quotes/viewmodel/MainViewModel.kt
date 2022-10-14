@@ -18,11 +18,11 @@ class MainViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _quote = MutableStateFlow<Resource<Quote>>(Resource.Loading())
-    val quote = _quote.asStateFlow()
+    val quote get() = _quote.asStateFlow()
 
     fun getRandomQuote() {
         viewModelScope.launch {
-            quotesRepository.getRandomQuote().collect{
+            quotesRepository.getRandomQuote().collect {
                 _quote.emit(it)
             }
         }
