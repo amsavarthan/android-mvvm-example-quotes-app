@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -12,8 +13,10 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.amsavarthan.quotes.R
+import com.amsavarthan.quotes.data.api.Resource
 import com.amsavarthan.quotes.databinding.ActivityMainBinding
 import com.amsavarthan.quotes.viewmodel.MainViewModel
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -29,20 +32,33 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        viewModel.getRandomQuote()
         lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.quote.flowWithLifecycle(lifecycle).collectLatest { quote ->
-                        if (quote == null) viewModel.getRandomQuote()
-                        binding.quote.text = quote?.content
-                        binding.author.text = quote?.author?.padStart(1, '-')
+            launch {
+                viewModel.quote
+                    .flowWithLifecycle(lifecycle)
+                    .collect { response ->
+                        when (response) {
+                            is Resource.Error -> {
+                                binding.progressHorizontal.isVisible = false
+                                Snackbar.make(
+                                    binding.root,
+                                    response.message!!,
+                                    Snackbar.LENGTH_SHORT
+                                ).show()
+                            }
+                            is Resource.Loading -> {
+                                binding.progressHorizontal.isVisible = true
+                            }
+                            is Resource.Success -> {
+                                binding.progressHorizontal.isVisible = false
+                                response.data!!.let { quote ->
+                                    binding.quote.text = quote.content
+                                    binding.author.text = quote.author.padStart(1, '-')
+                                }
+                            }
+                        }
                     }
-                }
-                launch {
-                    viewModel.isLoading.flowWithLifecycle(lifecycle).collectLatest { isLoading ->
-                        binding.progressHorizontal.isVisible = isLoading
-                    }
-                }
             }
         }
     }
