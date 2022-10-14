@@ -33,32 +33,26 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         viewModel.getRandomQuote()
-        lifecycleScope.launch {
-            launch {
-                viewModel.quote
-                    .flowWithLifecycle(lifecycle)
-                    .collect { response ->
-                        when (response) {
-                            is Resource.Error -> {
-                                binding.progressHorizontal.isVisible = false
-                                Snackbar.make(
-                                    binding.root,
-                                    response.message!!,
-                                    Snackbar.LENGTH_SHORT
-                                ).show()
-                            }
-                            is Resource.Loading -> {
-                                binding.progressHorizontal.isVisible = true
-                            }
-                            is Resource.Success -> {
-                                binding.progressHorizontal.isVisible = false
-                                response.data!!.let { quote ->
-                                    binding.quote.text = quote.content
-                                    binding.author.text = quote.author.padStart(1, '-')
-                                }
-                            }
-                        }
+        viewModel.quote.observe(this) { response ->
+            when (response) {
+                is Resource.Error -> {
+                    binding.progressHorizontal.isVisible = false
+                    Snackbar.make(
+                        binding.root,
+                        response.message!!,
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+                is Resource.Loading -> {
+                    binding.progressHorizontal.isVisible = true
+                }
+                is Resource.Success -> {
+                    binding.progressHorizontal.isVisible = false
+                    response.data!!.let { quote ->
+                        binding.quote.text = quote.content
+                        binding.author.text = quote.author.padStart(1, '-')
                     }
+                }
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.amsavarthan.quotes.viewmodel
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.amsavarthan.quotes.data.api.Resource
@@ -17,13 +19,13 @@ class MainViewModel @Inject constructor(
     private val quotesRepository: QuotesRepository,
 ) : ViewModel() {
 
-    private val _quote = MutableStateFlow<Resource<Quote>>(Resource.Loading())
-    val quote = _quote.asStateFlow()
+    private val _quote = MutableLiveData<Resource<Quote>>(Resource.Loading())
+    val quote: LiveData<Resource<Quote>> get() = _quote
 
     fun getRandomQuote() {
         viewModelScope.launch {
-            quotesRepository.getRandomQuote().collect{
-                _quote.emit(it)
+            quotesRepository.getRandomQuote().collect {
+                _quote.value = it
             }
         }
     }
